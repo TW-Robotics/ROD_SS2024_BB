@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <!-- Load robot description-->
+  <param name="robot_description" command="$(find xacro)/xacro $(find butler_rod)/urdf/butler_rod.urdf.xacro" />  
+ 
+  <!-- Spawn Robot State Publisher-->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Starting RViz with saved config-->
+  <arg name="rviz_config" value="-d $(find butler_rod_bringup)/config/moveit.rviz" /> 
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" args="$(arg rviz_config)" output="screen"/>
+  
+  <!-- Run MoveGroup for real robot (ur5/butler)-->
+  <include file="$(find butler_rod_moveit)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="moveit_controller_manager" value="ur5" />
+    <arg name="fake_execution_type" value="false"/>
+    <arg name="info" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="pipeline" value="ompl"/>
+    <arg name="load_robot_description" value="true"/>
+  </include>
+  
+  <!--RUN custom ur_driver with robot_state_publisher + description disables in ur_common.launch--> 
+  <include file="$(find ur_robot_driver)/launch/ur5_bringup.launch">
+    <arg name="robot_ip" default="10.0.0.21" />
+    <arg name="kinematics_config" value="$(find butler_rod_bringup)/config/ur5.yaml" />
+    <arg name="headless_mode" default="true" />
+    <!--arg name="robot_description_file" default="false"/--> 
+  </include>
+  
+  <!--Run gripper_node -->
+  <node name="gripper_node" pkg="gripper_2F_85_description" type="gripper_node.py" output="screen"/>
+
+  <!-- Realsense rs_aligned with some options(for all options check rs_aligned_depth.launch in realsense2_camera package-->
+  <include file="$(find realsense2_camera)/launch/rs_aligned_depth.launch">
+      <arg name="enable_fisheye"      default="false"/>
+      <arg name="enable_infra1"       default="false"/>
+      <arg name="enable_infra2"       default="false"/>
+      <arg name="enable_gyro"         default="false"/>
+      <arg name="enable_accel"        default="false"/>
+      
+      <arg name="enable_depth"        default="true"/>
+      <arg name="enable_color"        default="true"/>
+
+      <arg name="depth_width"         default="1280"/>
+      <arg name="depth_height"        default="720"/>
+      <arg name="depth_fps"           default="6"/>
+            
+      <arg name="color_width"         default="1280"/>
+      <arg name="color_height"        default="720"/>
+      <arg name="color_fps"           default="6"/>
+
+      <arg name="enable_pointcloud"   default="true"/>
+      <arg name="enable_sync"         default="true"/>
+      <arg name="align_depth"         default="true"/>
+      <!--arg name="rectified"         default="true"/-->
+  </include>
+
+
+
+  
+</launch>
